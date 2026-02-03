@@ -39,7 +39,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Không logout nếu là request /auth/me bị 401 (sẽ được xử lý ở AuthInitializer)
+    const isAuthMeRequest = error.config?.url === "/auth/me";
+
+    if (error.response?.status === 401 && !isAuthMeRequest) {
       store.dispatch(logout());
       window.location.href = "/login";
     }
