@@ -96,8 +96,13 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
           if (response.data.data) {
             dispatch(setUser(response.data.data));
           }
-        } catch {
-          // Token invalid, will be handled by axios interceptor
+        } catch (error: unknown) {
+          // Chỉ logout khi token thực sự invalid (401), không logout khi network error
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError.response?.status === 401) {
+            // Token invalid, logout đã xử lý trong interceptor
+          }
+          // Các lỗi khác (network, 500...) giữ token, có thể retry sau
         } finally {
           dispatch(setLoading(false));
         }
