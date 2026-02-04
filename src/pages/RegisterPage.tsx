@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { authApi } from "@/services/api";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
+import type { User } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,11 +32,17 @@ export default function RegisterPage() {
     mutationFn: () => authApi.register({ name, email, password }),
     onSuccess: (response) => {
       const data = response.data.data;
+      if (!data) return;
 
       // Nếu backend trả về token (auto-verify), login luôn
       if (data.token && data.user) {
         // Lưu credentials vào Redux và localStorage
-        dispatch(setCredentials({ user: data.user, token: data.token }));
+        dispatch(
+          setCredentials({
+            user: data.user as User,
+            token: data.token as string,
+          }),
+        );
         toast({
           title: "🎉 Đăng ký thành công!",
           description: "Chào mừng bạn đến với Web Đặt Cơm!",
