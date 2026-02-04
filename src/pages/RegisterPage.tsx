@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { authApi } from "@/services/api";
+import { useAppDispatch } from "@/store/hooks";
+import { setCredentials } from "@/store/authSlice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +19,7 @@ import { Eye, EyeOff, UserPlus, Mail, Check } from "lucide-react";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [step, setStep] = useState<"register" | "verify">("register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -26,13 +29,29 @@ export default function RegisterPage() {
 
   const registerMutation = useMutation({
     mutationFn: () => authApi.register({ name, email, password }),
-    onSuccess: () => {
-      toast({
-        title: "📧 Đã gửi mã OTP!",
-        description: `Kiểm tra email ${email} để lấy mã xác thực.`,
-        variant: "success",
-      });
-      setStep("verify");
+    onSuccess: (response) => {
+      const data = response.data.data;
+
+      // Nếu backend trả về token (auto-verify), login luôn
+      if (data.token && data.user) {
+        // Lưu credentials vào Redux và localStorage
+        dispatch(setCredentials({ user: data.user, token: data.token }));
+        toast({
+          title: "🎉 Đăng ký thành công!",
+          description: "Chào mừng bạn đến với Web Đặt Cơm!",
+          variant: "success",
+        });
+        // Redirect to home
+        navigate("/");
+      } else {
+        // Nếu cần OTP verification
+        toast({
+          title: "📧 Đã gửi mã OTP!",
+          description: `Kiểm tra email ${email} để lấy mã xác thực.`,
+          variant: "success",
+        });
+        setStep("verify");
+      }
     },
     onError: (error: any) => {
       toast({
